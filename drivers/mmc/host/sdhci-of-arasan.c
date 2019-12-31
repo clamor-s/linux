@@ -559,8 +559,7 @@ static const struct sdhci_ops sdhci_arasan_cqe_ops = {
 static const struct sdhci_pltfm_data sdhci_arasan_cqe_pdata = {
 	.ops = &sdhci_arasan_cqe_ops,
 	.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN,
-	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-			SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN,
+	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN,
 };
 
 #ifdef CONFIG_PM_SLEEP
@@ -1330,7 +1329,6 @@ static const struct sdhci_pltfm_data sdhci_arasan_pdata = {
 	.ops = &sdhci_arasan_ops,
 	.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-			SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 			SDHCI_QUIRK2_STOP_WITH_TC,
 };
 
@@ -1353,7 +1351,6 @@ static const struct sdhci_pltfm_data sdhci_keembay_emmc_pdata = {
 		SDHCI_QUIRK_32BIT_DMA_SIZE |
 		SDHCI_QUIRK_32BIT_ADMA_SIZE,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-		SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 		SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400 |
 		SDHCI_QUIRK2_STOP_WITH_TC |
 		SDHCI_QUIRK2_BROKEN_64_BIT_DMA,
@@ -1368,7 +1365,6 @@ static const struct sdhci_pltfm_data sdhci_keembay_sd_pdata = {
 		SDHCI_QUIRK_32BIT_DMA_SIZE |
 		SDHCI_QUIRK_32BIT_ADMA_SIZE,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-		SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 		SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON |
 		SDHCI_QUIRK2_STOP_WITH_TC |
 		SDHCI_QUIRK2_BROKEN_64_BIT_DMA,
@@ -1383,7 +1379,6 @@ static const struct sdhci_pltfm_data sdhci_keembay_sdio_pdata = {
 		SDHCI_QUIRK_32BIT_DMA_SIZE |
 		SDHCI_QUIRK_32BIT_ADMA_SIZE,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-		SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 		SDHCI_QUIRK2_HOST_OFF_CARD_ON |
 		SDHCI_QUIRK2_BROKEN_64_BIT_DMA,
 };
@@ -1409,7 +1404,6 @@ static struct sdhci_arasan_of_data intel_lgm_sdxc_data = {
 static const struct sdhci_pltfm_data sdhci_arasan_zynqmp_pdata = {
 	.ops = &sdhci_arasan_ops,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
-			SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 			SDHCI_QUIRK2_STOP_WITH_TC,
 };
 
@@ -1794,6 +1788,9 @@ static int sdhci_arasan_add_host(struct sdhci_arasan_data *sdhci_arasan)
 	struct cqhci_host *cq_host;
 	bool dma64;
 	int ret;
+
+	if (sdhci_pltfm_clk_get_max_clock(host) <= 25000000)
+		host->quirks2 |= SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN;
 
 	if (!sdhci_arasan->has_cqe)
 		return sdhci_add_host(host);
