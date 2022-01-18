@@ -13,9 +13,9 @@
 	chassis-type = "convertible";
 
 	aliases {
-		mmc0 = "/mmc@78000600"; /* eMMC */
-		mmc1 = "/mmc@78000400"; /* uSD slot */
-		mmc2 = "/mmc@78000000"; /* WiFi */
+		mmc0 = &sdmmc4; /* eMMC */
+		mmc1 = &sdmmc3; /* uSD slot */
+		mmc2 = &sdmmc1; /* WiFi */
 
 		rtc0 = &palmas;
 		rtc1 = "/rtc@7000e000";
@@ -605,12 +605,12 @@
 		};
 	};
 
-	mmc@78000000 {
+	sdmmc1: mmc@78000000 {
 		/* WiFi */
 	};
 
 	/* MicroSD card */
-	mmc@78000400 {
+	sdmmc3: mmc@78000400 {
 		status = "okay";
 
 		bus-width = <4>;
@@ -626,7 +626,7 @@
 		pinctrl-0 = <&sdmmc3_default>;
 	};
 
-	mmc@78000600 {
+	sdmmc4: mmc@78000600 {
 		/* eMMC */
 	};
 

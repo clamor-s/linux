@@ -12,9 +12,9 @@
 	chassis-type = "convertible";
 
 	aliases {
-		mmc0 = "/mmc@78000600"; /* eMMC */
-		mmc1 = "/mmc@78000000"; /* uSD slot */
-		mmc2 = "/mmc@78000400"; /* WiFi */
+		mmc0 = &sdmmc4; /* eMMC */
+		mmc1 = &sdmmc1; /* uSD slot */
+		mmc2 = &sdmmc3; /* WiFi */
 
 		rtc0 = &pmic;
 		rtc1 = "/rtc@7000e000";
@@ -1388,7 +1388,7 @@
 		};
 	};
 
-	mmc@78000000 {
+	sdmmc1: mmc@78000000 {
 		status = "okay";
 
 		/* FIXME: Full 208Mhz clock rate doesn't work reliably */
@@ -1401,7 +1401,7 @@
 		vqmmc-supply = <&vddio_usd>;	/* ldo3 */
 	};
 
-	mmc@78000400 {
+	sdmmc3: mmc@78000400 {
 		status = "okay";
 
 		#address-cells = <1>;
@@ -1431,7 +1431,7 @@
 		};
 	};
 
-	mmc@78000600 {
+	sdmmc4: mmc@78000600 {
 		status = "okay";
 		bus-width = <8>;
 		vmmc-supply = <&vcore_emmc>;
