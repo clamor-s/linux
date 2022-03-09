@@ -1309,9 +1309,8 @@
 
 				vdd_1v8_vio: vio {
 					regulator-name = "vdd_1v8_gen";
-					/* FIXME: eMMC won't work, if set to 1.8 V */
-					regulator-min-microvolt = <1500000>;
-					regulator-max-microvolt = <3300000>;
+					regulator-min-microvolt = <1800000>;
+					regulator-max-microvolt = <1800000>;
 					regulator-always-on;
 					regulator-boot-on;
 				};
@@ -1329,8 +1328,6 @@
 					regulator-name = "vdd_usd";
 					regulator-min-microvolt = <3100000>;
 					regulator-max-microvolt = <3100000>;
-					/* FIXME: Without this, voltage switching fails */
-					regulator-always-on;
 				};
 
 				/* uSD slot VDDIO */
@@ -1445,9 +1442,6 @@
 	sdmmc1: mmc@78000000 {
 		status = "okay";
 
-		/* FIXME: Full 208Mhz clock rate doesn't work reliably */
-		max-frequency = <104000000>;
-
 		cd-gpios = <&gpio TEGRA_GPIO(I, 5) GPIO_ACTIVE_LOW>;
 		bus-width = <4>;
 
@@ -1488,10 +1482,12 @@
 	sdmmc4: mmc@78000600 {
 		status = "okay";
 		bus-width = <8>;
+
+		non-removable;
+		mmc-ddr-1_8v;
+
 		vmmc-supply = <&vcore_emmc>;
 		vqmmc-supply = <&vdd_1v8_vio>;
-		mmc-ddr-3_3v;
-		non-removable;
 	};
 
 	/* USB via ASUS connector */
