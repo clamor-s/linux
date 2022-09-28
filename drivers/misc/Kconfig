@@ -143,6 +143,17 @@ config ICS932S401
 	  This driver can also be built as a module. If so, the module
 	  will be called ics932s401.
 
+config INPUT_ISA1200_HAPTIC
+	tristate "Immersion ISA1200 haptic feedback unit"
+	depends on I2C
+	select REGMAP_I2C
+	help
+	  Say Y to enable support for the Immersion ISA1200 haptic
+	  feedback unit.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called isa1200.
+
 config ATMEL_SSC
 	tristate "Device driver for Atmel SSC peripheral"
 	depends on HAS_IOMEM && (ARCH_AT91 || COMPILE_TEST)
