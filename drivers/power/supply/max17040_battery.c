@@ -18,6 +18,7 @@
 #include <linux/of_device.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
+#include <linux/iio/consumer.h>
 
 #define MAX17040_VCELL	0x02
 #define MAX17040_SOC	0x04
@@ -142,6 +143,7 @@ struct max17040_chip {
 	struct delayed_work		work;
 	struct power_supply		*battery;
 	struct chip_data		data;
+	struct iio_channel		*channel_temp;
 
 	/* battery capacity */
 	int soc;
@@ -405,6 +407,10 @@ static int max17040_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_HEALTH:
 		power_supply_get_property_from_supplier(psy, psp, val);
 		break;
+	case POWER_SUPPLY_PROP_TEMP:
+		iio_read_channel_processed_scale(chip->channel_temp,
+						 &val->intval, 10);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -426,6 +432,7 @@ static enum power_supply_property max17040_battery_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY_ALERT_MIN,
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_HEALTH,
+	POWER_SUPPLY_PROP_TEMP,
 };
 
 static const struct power_supply_desc max17040_battery_desc = {
@@ -470,6 +477,13 @@ static int max17040_probe(struct i2c_client *client)
 
 	i2c_set_clientdata(client, chip);
 	psy_cfg.drv_data = chip;
+
+	if (device_property_present(&client->dev, "io-channels")) {
+		chip->channel_temp = devm_iio_channel_get(&client->dev, "temp");
+		if (IS_ERR(chip->channel_temp))
+			return dev_err_probe(&client->dev, PTR_ERR(chip->channel_temp),
+					     "failed to get temp\n");
+	};
 
 	chip->battery = devm_power_supply_register(&client->dev,
 				&max17040_battery_desc, &psy_cfg);
