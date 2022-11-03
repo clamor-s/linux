@@ -29,17 +29,29 @@
 #include <linux/usb/tegra_usb_phy.h>
 #include <linux/usb/ulpi.h>
 
+#define USB_TXFILLTUNING			0x154
+#define USB_FIFO_TXFILL_THRES(x)		(((x) & 0x1f) << 16)
+#define USB_FIFO_TXFILL_MASK			0x1f0000
+
 #define ULPI_VIEWPORT				0x170
+
+#define USB_PORTSC				0x174
+#define   USB_PORTSC_WKCN			BIT(20)
+#define   USB_PORTSC_WKDS			BIT(21)
+#define   USB_PORTSC_WKOC			BIT(22)
 
 /* PORTSC PTS/PHCD bits, Tegra20 only */
 #define TEGRA_USB_PORTSC1			0x184
-#define TEGRA_USB_PORTSC1_PTS(x)		(((x) & 0x3) << 30)
-#define TEGRA_USB_PORTSC1_PHCD			BIT(23)
+#define   TEGRA_USB_PORTSC1_PTS(x)		(((x) & 0x3) << 30)
+#define   TEGRA_USB_PORTSC1_PHCD		BIT(23)
 
 /* HOSTPC1 PTS/PHCD bits, Tegra30 and above */
 #define TEGRA_USB_HOSTPC1_DEVLC			0x1b4
-#define TEGRA_USB_HOSTPC1_DEVLC_PTS(x)		(((x) & 0x7) << 29)
-#define TEGRA_USB_HOSTPC1_DEVLC_PHCD		BIT(22)
+#define   TEGRA_USB_HOSTPC1_DEVLC_PTS(x)	(((x) & 0x7) << 29)
+#define   TEGRA_USB_HOSTPC1_DEVLC_PHCD		BIT(22)
+#define   TEGRA_USB_HOSTPC1_DEVLC_PTS_MASK	0x7
+#define   TEGRA_USB_HOSTPC1_DEVLC_PTS_HSIC	BIT(2)
+#define   TEGRA_USB_HOSTPC1_DEVLC_STS		BIT(28)
 
 /* Bits of PORTSC1, which will get cleared by writing 1 into them */
 #define TEGRA_PORTSC1_RWC_BITS	(PORT_CSC | PORT_PEC | PORT_OCC)
@@ -51,11 +63,12 @@
 #define   USB_SUSP_CLR				BIT(5)
 #define   USB_PHY_CLK_VALID			BIT(7)
 #define   UTMIP_RESET				BIT(11)
-#define   UHSIC_RESET				BIT(11)
 #define   UTMIP_PHY_ENABLE			BIT(12)
 #define   ULPI_PHY_ENABLE			BIT(13)
 #define   USB_SUSP_SET				BIT(14)
+#define   UHSIC_RESET				BIT(14)
 #define   USB_WAKEUP_DEBOUNCE_COUNT(x)		(((x) & 0x7) << 16)
+#define   UHSIC_PHY_ENABLE			BIT(19)
 
 #define USB_PHY_VBUS_SENSORS			0x404
 #define   B_SESS_VLD_WAKEUP_EN			BIT(14)
@@ -156,6 +169,52 @@
 #define UTMIP_BIAS_CFG1				0x83c
 #define   UTMIP_BIAS_PDTRK_COUNT(x)		(((x) & 0x1f) << 3)
 
+#define UHSIC_PLL_CFG1				0xc04
+#define   UHSIC_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
+#define   UHSIC_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 14)
+
+#define UHSIC_HSRX_CFG0				0xc08
+#define   UHSIC_ELASTIC_UNDERRUN_LIMIT(x)	(((x) & 0x1f) << 2)
+#define   UHSIC_ELASTIC_OVERRUN_LIMIT(x)	(((x) & 0x1f) << 8)
+#define   UHSIC_IDLE_WAIT(x)			(((x) & 0x1f) << 13)
+
+#define UHSIC_HSRX_CFG1				0xc0c
+#define   UHSIC_HS_SYNC_START_DLY(x)		(((x) & 0x1f) << 1)
+
+#define UHSIC_TX_CFG0				0xc10
+#define   UHSIC_HS_READY_WAIT_FOR_VALID		BIT(9)
+
+#define UHSIC_MISC_CFG0				0xc14
+#define   UHSIC_SUSPEND_EXIT_ON_EDGE		BIT(7)
+#define   UHSIC_DETECT_SHORT_CONNECT		BIT(8)
+#define   UHSIC_FORCE_XCVR_MODE			BIT(15)
+#define   UHSIC_DISABLE_BUSRESET		BIT(20)
+
+#define UHSIC_MISC_CFG1				0xc18
+#define   UHSIC_PLLU_STABLE_COUNT(x)		(((x) & 0xfff) << 2)
+
+#define UHSIC_PADS_CFG0				0xc1c
+#define   UHSIC_TX_RTUNEN			0xf000
+#define   UHSIC_TX_RTUNE(x)			(((x) & 0xf) << 12)
+
+#define UHSIC_PADS_CFG1				0xc20
+#define   UHSIC_PD_BG				BIT(2)
+#define   UHSIC_PD_TX				BIT(3)
+#define   UHSIC_PD_TRK				BIT(4)
+#define   UHSIC_PD_RX				BIT(5)
+#define   UHSIC_PD_ZI				BIT(6)
+#define   UHSIC_RX_SEL				BIT(7)
+#define   UHSIC_RPD_DATA			BIT(9)
+#define   UHSIC_RPD_STROBE			BIT(10)
+#define   UHSIC_RPU_DATA			BIT(11)
+#define   UHSIC_RPU_STROBE			BIT(12)
+
+#define UHSIC_CMD_CFG0				0xc24
+#define   UHSIC_PRETEND_CONNECT_DETECT		BIT(5)
+
+#define UHSIC_STAT_CFG0				0xc28
+#define   UHSIC_CONNECT_DETECT			BIT(0)
+
 /* For Tegra30 and above only, the address is different in Tegra20 */
 #define USB_USBMODE				0x1f8
 #define   USB_USBMODE_MASK			(3 << 0)
@@ -174,7 +233,8 @@ struct tegra_xtal_freq {
 	u8 enable_delay;
 	u8 stable_count;
 	u8 active_delay;
-	u8 xtal_freq_count;
+	u8 utmi_xtal_freq_count;
+	u16 hsic_xtal_freq_count;
 	u16 debounce;
 };
 
@@ -184,7 +244,8 @@ static const struct tegra_xtal_freq tegra_freq_table[] = {
 		.enable_delay = 0x02,
 		.stable_count = 0x2F,
 		.active_delay = 0x04,
-		.xtal_freq_count = 0x76,
+		.utmi_xtal_freq_count = 0x76,
+		.hsic_xtal_freq_count = 0x1CA,
 		.debounce = 0x7530,
 	},
 	{
@@ -192,7 +253,8 @@ static const struct tegra_xtal_freq tegra_freq_table[] = {
 		.enable_delay = 0x02,
 		.stable_count = 0x33,
 		.active_delay = 0x05,
-		.xtal_freq_count = 0x7F,
+		.utmi_xtal_freq_count = 0x7F,
+		.hsic_xtal_freq_count = 0x1F0,
 		.debounce = 0x7EF4,
 	},
 	{
@@ -200,7 +262,8 @@ static const struct tegra_xtal_freq tegra_freq_table[] = {
 		.enable_delay = 0x03,
 		.stable_count = 0x4B,
 		.active_delay = 0x06,
-		.xtal_freq_count = 0xBB,
+		.utmi_xtal_freq_count = 0xBB,
+		.hsic_xtal_freq_count = 0x2DD,
 		.debounce = 0xBB80,
 	},
 	{
@@ -208,7 +271,8 @@ static const struct tegra_xtal_freq tegra_freq_table[] = {
 		.enable_delay = 0x04,
 		.stable_count = 0x66,
 		.active_delay = 0x09,
-		.xtal_freq_count = 0xFE,
+		.utmi_xtal_freq_count = 0xFE,
+		.hsic_xtal_freq_count = 0x3E0,
 		.debounce = 0xFDE8,
 	},
 };
@@ -541,7 +605,7 @@ static int utmi_phy_power_on(struct tegra_usb_phy *phy)
 		val = readl_relaxed(base + UTMIP_PLL_CFG1);
 		val &= ~(UTMIP_XTAL_FREQ_COUNT(~0) |
 			UTMIP_PLLU_ENABLE_DLY_COUNT(~0));
-		val |= UTMIP_XTAL_FREQ_COUNT(phy->freq->xtal_freq_count) |
+		val |= UTMIP_XTAL_FREQ_COUNT(phy->freq->utmi_xtal_freq_count) |
 			UTMIP_PLLU_ENABLE_DLY_COUNT(phy->freq->enable_delay);
 		writel_relaxed(val, base + UTMIP_PLL_CFG1);
 	}
@@ -864,6 +928,138 @@ static int ulpi_phy_power_off(struct tegra_usb_phy *phy)
 	return 0;
 }
 
+static int uhsic_phy_power_on(struct tegra_usb_phy *phy)
+{
+	struct tegra_utmip_config *config = phy->config;
+	void __iomem *base = phy->regs;
+	u32 val;
+	int err;
+
+	err = clk_prepare_enable(phy->clk);
+	if (err)
+		return err;
+
+	usleep_range(1000, 2000);
+
+	gpiod_set_value_cansleep(phy->enable_gpio, 1);
+
+	val = readl_relaxed(base + UHSIC_PADS_CFG1);
+	val &= ~(UHSIC_PD_BG | UHSIC_PD_TRK | UHSIC_PD_RX |
+		 UHSIC_PD_ZI | UHSIC_RPD_DATA | UHSIC_RPD_STROBE);
+	val |= UHSIC_RX_SEL | UHSIC_PD_TX;
+	writel_relaxed(val, base + UHSIC_PADS_CFG1);
+
+	val = readl_relaxed(base + USB_SUSP_CTRL);
+	val |= UHSIC_RESET;
+	writel_relaxed(val, base + USB_SUSP_CTRL);
+
+	udelay(1);
+
+	val = readl_relaxed(base + USB_SUSP_CTRL);
+	val |= UHSIC_PHY_ENABLE;
+	writel_relaxed(val, base + USB_SUSP_CTRL);
+
+	val = readl_relaxed(base + UHSIC_HSRX_CFG0);
+	val &= ~(UHSIC_IDLE_WAIT(~0) |
+		 UHSIC_ELASTIC_UNDERRUN_LIMIT(~0) |
+		 UHSIC_ELASTIC_OVERRUN_LIMIT(~0));
+	val |= UHSIC_IDLE_WAIT(config->idle_wait_delay) |
+		UHSIC_ELASTIC_UNDERRUN_LIMIT(config->elastic_limit) |
+		UHSIC_ELASTIC_OVERRUN_LIMIT(config->elastic_limit);
+	writel_relaxed(val, base + UHSIC_HSRX_CFG0);
+
+	val = readl_relaxed(base + UHSIC_HSRX_CFG1);
+	val &= ~UHSIC_HS_SYNC_START_DLY(~0);
+	val |= UHSIC_HS_SYNC_START_DLY(config->hssync_start_delay);
+	writel_relaxed(val, base + UHSIC_HSRX_CFG1);
+
+	/* WAR HSIC TX */
+	val = readl_relaxed(base + UHSIC_TX_CFG0);
+	val &= ~UHSIC_HS_READY_WAIT_FOR_VALID;
+	writel_relaxed(val, base + UHSIC_TX_CFG0);
+
+	val = readl_relaxed(base + UHSIC_MISC_CFG0);
+	val |= UHSIC_SUSPEND_EXIT_ON_EDGE;
+	/* Disable generic bus reset, to allow AP30 specific bus reset */
+	val |= UHSIC_DISABLE_BUSRESET;
+	writel_relaxed(val, base + UHSIC_MISC_CFG0);
+
+	val = readl_relaxed(base + UHSIC_MISC_CFG1);
+	val &= ~UHSIC_PLLU_STABLE_COUNT(~0);
+	val |= UHSIC_PLLU_STABLE_COUNT(phy->freq->stable_count);
+	writel_relaxed(val, base + UHSIC_MISC_CFG1);
+
+	val = readl_relaxed(base + UHSIC_PLL_CFG1);
+	val &= ~(UHSIC_XTAL_FREQ_COUNT(~0) |
+		UHSIC_PLLU_ENABLE_DLY_COUNT(~0));
+	val |= UHSIC_XTAL_FREQ_COUNT(phy->freq->hsic_xtal_freq_count) |
+		UHSIC_PLLU_ENABLE_DLY_COUNT(phy->freq->enable_delay);
+	writel_relaxed(val, base + UHSIC_PLL_CFG1);
+
+	val = readl_relaxed(base + USB_SUSP_CTRL);
+	val &= ~UHSIC_RESET;
+	writel_relaxed(val, base + USB_SUSP_CTRL);
+
+	udelay(1);
+
+	val = readl_relaxed(base + UHSIC_PADS_CFG1);
+	val &= ~UHSIC_PD_TX;
+	writel_relaxed(val, base + UHSIC_PADS_CFG1);
+
+	val = readl_relaxed(base + USB_USBMODE);
+	val |= USB_USBMODE_HOST;
+	writel_relaxed(val, base + USB_USBMODE);
+
+	/* Change the USB controller PHY type to HSIC */
+	val = readl_relaxed(base + TEGRA_USB_HOSTPC1_DEVLC);
+	val &= ~TEGRA_USB_HOSTPC1_DEVLC_PTS(TEGRA_USB_HOSTPC1_DEVLC_PTS_MASK);
+	val |= TEGRA_USB_HOSTPC1_DEVLC_PTS(TEGRA_USB_HOSTPC1_DEVLC_PTS_HSIC);
+	val &= ~TEGRA_USB_HOSTPC1_DEVLC_STS;
+	writel_relaxed(val, base + TEGRA_USB_HOSTPC1_DEVLC);
+
+	val = readl_relaxed(base + USB_TXFILLTUNING);
+	if ((val & USB_FIFO_TXFILL_MASK) != USB_FIFO_TXFILL_THRES(0x10)) {
+		val = USB_FIFO_TXFILL_THRES(0x10);
+		writel_relaxed(val, base + USB_TXFILLTUNING);
+	}
+
+	val = readl_relaxed(base + USB_PORTSC);
+	val &= ~(USB_PORTSC_WKOC | USB_PORTSC_WKDS | USB_PORTSC_WKCN);
+	writel_relaxed(val, base + USB_PORTSC);
+
+	val = readl_relaxed(base + UHSIC_PADS_CFG0);
+	val &= ~UHSIC_TX_RTUNEN;
+	/* set Rtune impedance to 50 ohm */
+	val |= UHSIC_TX_RTUNE(8);
+	writel_relaxed(val, base + UHSIC_PADS_CFG0);
+
+	/* This is shared with UTMI mode */
+	if (utmi_wait_register(base + USB_SUSP_CTRL, USB_PHY_CLK_VALID,
+			       USB_PHY_CLK_VALID))
+		dev_err(phy->u_phy.dev,
+			"Timeout waiting for PHY to stabilize on enable (HSIC)\n");
+
+	return 0;
+}
+
+static int uhsic_phy_power_off(struct tegra_usb_phy *phy)
+{
+	void __iomem *base = phy->regs;
+	u32 val;
+
+	/* Remove power downs for HSIC from PADS CFG1 register */
+	val = readl_relaxed(base + UHSIC_PADS_CFG1);
+	val |= (UHSIC_PD_BG | UHSIC_PD_TRK | UHSIC_PD_RX |
+		UHSIC_PD_ZI | UHSIC_PD_TX);
+	writel_relaxed(val, base + UHSIC_PADS_CFG1);
+
+	gpiod_set_value_cansleep(phy->enable_gpio, 0);
+
+	clk_disable_unprepare(phy->clk);
+
+	return 0;
+}
+
 static int tegra_usb_phy_power_on(struct tegra_usb_phy *phy)
 {
 	int err;
@@ -878,6 +1074,10 @@ static int tegra_usb_phy_power_on(struct tegra_usb_phy *phy)
 
 	case USBPHY_INTERFACE_MODE_ULPI:
 		err = ulpi_phy_power_on(phy);
+		break;
+
+	case USBPHY_INTERFACE_MODE_HSIC:
+		err = uhsic_phy_power_on(phy);
 		break;
 
 	default:
@@ -909,6 +1109,10 @@ static int tegra_usb_phy_power_off(struct tegra_usb_phy *phy)
 
 	case USBPHY_INTERFACE_MODE_ULPI:
 		err = ulpi_phy_power_off(phy);
+		break;
+
+	case USBPHY_INTERFACE_MODE_HSIC:
+		err = uhsic_phy_power_off(phy);
 		break;
 
 	default:
@@ -1204,29 +1408,11 @@ static int read_utmi_param(struct platform_device *pdev, const char *param,
 	return err;
 }
 
-static int utmi_phy_probe(struct tegra_usb_phy *tegra_phy,
-			  struct platform_device *pdev)
+static int tegra_of_phy_probe(struct tegra_usb_phy *tegra_phy,
+			      struct platform_device *pdev)
 {
 	struct tegra_utmip_config *config;
-	struct resource *res;
 	int err;
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-	if (!res) {
-		dev_err(&pdev->dev, "Failed to get UTMI pad regs\n");
-		return  -ENXIO;
-	}
-
-	/*
-	 * Note that UTMI pad registers are shared by all PHYs, therefore
-	 * devm_platform_ioremap_resource() can't be used here.
-	 */
-	tegra_phy->pad_regs = devm_ioremap(&pdev->dev, res->start,
-					   resource_size(res));
-	if (!tegra_phy->pad_regs) {
-		dev_err(&pdev->dev, "Failed to remap UTMI pad regs\n");
-		return -ENOMEM;
-	}
 
 	tegra_phy->config = devm_kzalloc(&pdev->dev, sizeof(*config),
 					 GFP_KERNEL);
@@ -1449,7 +1635,25 @@ static int tegra_usb_phy_probe(struct platform_device *pdev)
 	tegra_phy->phy_type = of_usb_get_phy_mode(np);
 	switch (tegra_phy->phy_type) {
 	case USBPHY_INTERFACE_MODE_UTMI:
-		err = utmi_phy_probe(tegra_phy, pdev);
+
+		res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+		if (!res) {
+			dev_err(&pdev->dev, "Failed to get UTMI pad regs\n");
+			return  -ENXIO;
+		}
+
+		/*
+		 * Note that UTMI pad registers are shared by all PHYs, therefore
+		 * devm_platform_ioremap_resource() can't be used here.
+		 */
+		tegra_phy->pad_regs = devm_ioremap(&pdev->dev, res->start,
+						   resource_size(res));
+		if (!tegra_phy->pad_regs) {
+			dev_err(&pdev->dev, "Failed to remap UTMI pad regs\n");
+			return -ENOMEM;
+		}
+
+		err = tegra_of_phy_probe(tegra_phy, pdev);
 		if (err)
 			return err;
 
@@ -1508,6 +1712,38 @@ static int tegra_usb_phy_probe(struct platform_device *pdev)
 
 		tegra_phy->ulpi = phy;
 		tegra_phy->ulpi->io_priv = tegra_phy->regs + ULPI_VIEWPORT;
+		break;
+
+	case USBPHY_INTERFACE_MODE_HSIC:
+		err = tegra_of_phy_probe(tegra_phy, pdev);
+		if (err)
+			return err;
+
+		tegra_phy->clk = devm_clk_get(&pdev->dev, "hsic-clk");
+		err = PTR_ERR_OR_ZERO(tegra_phy->clk);
+		if (err) {
+			dev_err(&pdev->dev,
+				"Failed to get HSIC clock: %d\n", err);
+			return err;
+		}
+
+		gpiod = devm_gpiod_get(&pdev->dev, "nvidia,phy-enable",
+				       GPIOD_OUT_LOW);
+		err = PTR_ERR_OR_ZERO(gpiod);
+		if (err) {
+			dev_err(&pdev->dev,
+				"Request failed for enable GPIO: %d\n", err);
+			return err;
+		}
+
+		err = gpiod_set_consumer_name(gpiod, "hsic_phy_enable");
+		if (err) {
+			dev_err(&pdev->dev,
+				"Failed to set up reset GPIO name: %d\n", err);
+			return err;
+		}
+
+		tegra_phy->enable_gpio = gpiod;
 		break;
 
 	default:
