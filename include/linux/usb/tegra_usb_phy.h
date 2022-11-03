@@ -74,6 +74,7 @@ struct tegra_usb_phy {
 	bool is_legacy_phy;
 	enum usb_phy_interface phy_type;
 	struct gpio_desc *reset_gpio;
+	struct gpio_desc *enable_gpio;
 	struct reset_control *pad_rst;
 	bool wakeup_enabled;
 	bool pad_wakeup;
