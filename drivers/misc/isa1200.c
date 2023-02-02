@@ -445,6 +445,15 @@ static const struct isa1200_config isa1200_gavini = {
 	.period = 0x8c,
 };
 
+/* Configuration for P880/P895, LG Optimus 4X HD/Vu */
+static const struct isa1200_config isa1200_x3 = {
+	.ldo_voltage = ISA1200_LDO_VOLTAGE_23V,
+	.clkdiv = ISA1200_HCTRL0_DIV_512,
+	.plldiv = 1,
+	.freq = 0x93, /* 20.3 KHz */
+	.period = 0,
+};
+
 static const struct of_device_id isa1200_of_match[] = {
 	{
 		.compatible = "immersion,isa1200-janice",
@@ -453,6 +462,10 @@ static const struct of_device_id isa1200_of_match[] = {
 	{
 		.compatible = "immersion,isa1200-gavini",
 		.data = &isa1200_gavini,
+	},
+	{
+		.compatible = "immersion,isa1200-x3",
+		.data = &isa1200_x3,
 	},
 	{ }
 };
