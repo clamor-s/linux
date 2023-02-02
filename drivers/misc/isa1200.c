@@ -26,6 +26,7 @@
 #include <linux/input.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/pwm.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/gpio/consumer.h>
@@ -141,12 +142,10 @@
 
 struct isa1200_config {
 	u8 ldo_voltage;
-	bool pwm_in;
 	bool erm;
 	u8 clkdiv;
 	u8 plldiv;
 	u8 freq;
-	u8 duty;
 	u8 period;
 };
 
@@ -156,10 +155,12 @@ struct isa1200 {
 	struct device *dev;
 	struct regmap *map;
 	struct clk *clk;
+	struct pwm_device *pwm;
 	struct gpio_desc *hen;
 	struct gpio_desc *len;
 	struct work_struct play_work;
 	int level;
+	u32 duty;
 };
 
 static const struct regmap_config isa1200_regmap_config = {
@@ -168,14 +169,16 @@ static const struct regmap_config isa1200_regmap_config = {
 	.max_register = 0x3d,
 };
 
-void isa1200_start(struct isa1200 *isa)
+static void isa1200_start(struct isa1200 *isa)
 {
 	const struct isa1200_config *cfg = isa->conf;
+	struct pwm_state state;
 	u8 hctrl0;
 	u8 hctrl1;
 	u8 hctrl3;
 
 	clk_prepare_enable(isa->clk);
+
 	gpiod_set_value(isa->hen, 1);
 	gpiod_set_value(isa->len, 1);
 
@@ -183,15 +186,19 @@ void isa1200_start(struct isa1200 *isa)
 
 	regmap_write(isa->map, ISA1200_SCTRL, cfg->ldo_voltage);
 
-	if (!cfg->pwm_in) {
+	if (isa->clk) {
 		hctrl0 = ISA1200_HCTRL0_PWM_GEN_MODE;
 		hctrl1 = ISA1200_HCTRL1_EXT_CLOCK;
-	} else {
+	}
+
+	if (isa->pwm) {
 		hctrl0 = ISA1200_HCTRL0_PWM_INPUT_MODE;
 		hctrl1 = 0;
 	}
+
 	hctrl0 |= cfg->clkdiv;
 	hctrl1 |= ISA1200_HCTRL1_DAC_INVERT;
+
 	if (cfg->erm)
 		hctrl1 |= ISA1200_HCTRL1_ERM;
 
@@ -209,7 +216,7 @@ void isa1200_start(struct isa1200 *isa)
 	/* Frequency */
 	regmap_write(isa->map, ISA1200_HCTRL4, cfg->freq);
 	/* Duty cycle */
-	regmap_write(isa->map, ISA1200_HCTRL5, cfg->duty);
+	regmap_write(isa->map, ISA1200_HCTRL5, cfg->period >> 1);
 	/* Period */
 	regmap_write(isa->map, ISA1200_HCTRL6, cfg->period);
 
@@ -222,14 +229,40 @@ void isa1200_start(struct isa1200 *isa)
 	 * "Duty 0x64 == nForce 90", and no force feedback happens
 	 * unless we do this.
 	 */
-	regmap_write(isa->map, ISA1200_HCTRL5, 0x64);
+	if (isa->clk)
+		regmap_write(isa->map, ISA1200_HCTRL5, 0x64);
+
+	if (isa->pwm) {
+		pwm_get_state(isa->pwm, &state);
+		state.duty_cycle = isa->duty;
+		state.enabled = true;
+		pwm_apply_state(isa->pwm, &state);
+	}
 }
 
-void isa1200_stop(struct isa1200 *isa)
+static void isa1200_stop(struct isa1200 *isa)
 {
-	regmap_write(isa->map, ISA1200_HCTRL0, 0);
+	struct pwm_state state;
+	u8 hctrl0;
+
+	if (isa->pwm) {
+		pwm_get_state(isa->pwm, &state);
+		state.duty_cycle = 0;
+		state.enabled = false;
+		pwm_apply_state(isa->pwm, &state);
+	}
+
+	if (isa->clk)
+		hctrl0 = 0;
+
+	if (isa->pwm)
+		hctrl0 = ISA1200_HCTRL0_PWM_INPUT_MODE;
+
+	regmap_write(isa->map, ISA1200_HCTRL0, hctrl0);
+
 	gpiod_set_value(isa->len, 0);
 	gpiod_set_value(isa->hen, 0);
+
 	clk_disable_unprepare(isa->clk);
 }
 
@@ -299,39 +332,54 @@ static int isa1200_probe(struct i2c_client *client)
 	isa->dev = dev;
 	isa->conf = device_get_match_data(dev);
 
-	/*
-	 * TODO: we currently only support using a clock, but the device
-	 * and the device tree bindings support feeding the chip with a
-	 * PWM instead. If you need this and can test it, implement it.
-	 */
-	isa->clk = devm_clk_get(dev, NULL);
-	if (IS_ERR(isa->clk)) {
-		ret = PTR_ERR(isa->clk);
-		return dev_err_probe(dev, ret, "failed to get clock\n");
+	isa->clk = devm_clk_get_optional(dev, NULL);
+	if (IS_ERR(isa->clk))
+		return dev_err_probe(dev, PTR_ERR(isa->clk), "failed to get clock\n");
+
+	clk_prepare_enable(isa->clk);
+
+	/* there is no optional pwm request */
+	isa->pwm = devm_pwm_get(dev, NULL);
+	if (IS_ERR(isa->pwm))
+		isa->pwm = NULL;
+
+	if (isa->pwm) {
+		struct pwm_state state;
+
+		pwm_init_state(isa->pwm, &state);
+
+		ret = device_property_read_u32(dev, "duty", &isa->duty);
+		if (ret)
+			isa->duty = state.period >> 1;
+
+		ret = pwm_apply_state(isa->pwm, &state);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "failed to apply initial PWM state\n");
 	}
 
 	isa->map = devm_regmap_init_i2c(client, &isa1200_regmap_config);
-	if (IS_ERR(isa->map)) {
-		ret = PTR_ERR(isa->map);
-		return dev_err_probe(dev, ret, "failed to initialize register map\n");
-	}
+	if (IS_ERR(isa->map))
+		return dev_err_probe(dev, PTR_ERR(isa->map),
+				     "failed to initialize register map\n");
+
+	isa->hen = devm_gpiod_get_optional(dev, "hen", GPIOD_OUT_HIGH);
+	if (IS_ERR(isa->hen))
+		return dev_err_probe(dev, PTR_ERR(isa->hen),
+				     "failed to get HEN GPIO\n");
+
+	isa->len = devm_gpiod_get_optional(dev, "len", GPIOD_OUT_HIGH);
+	if (IS_ERR(isa->len))
+		return dev_err_probe(dev, PTR_ERR(isa->len),
+				     "failed to get LEN GPIO\n");
+
+	udelay(200);
 
 	/* Read a register so we know that regmap and I2C transport works */
 	ret = regmap_read(isa->map, ISA1200_SCTRL, &val);
 	if (ret) {
 		dev_info(dev, "failed to read SCTRL: %d\n", ret);
 		return ret;
-	}
-
-	isa->hen = devm_gpiod_get(dev, "hen", GPIOD_OUT_LOW);
-	if (IS_ERR(isa->hen)) {
-		ret = PTR_ERR(isa->map);
-		return dev_err_probe(dev, ret, "failed to get HEN GPIO\n");
-	}
-	isa->len = devm_gpiod_get(dev, "len", GPIOD_OUT_LOW);
-	if (IS_ERR(isa->hen)) {
-		ret = PTR_ERR(isa->map);
-		return dev_err_probe(dev, ret, "failed to get LEN GPIO\n");
 	}
 
 	INIT_WORK(&isa->play_work, isa1200_play_work);
@@ -382,22 +430,18 @@ static SIMPLE_DEV_PM_OPS(isa1200_pm, isa1200_suspend, isa1200_resume);
 /* Configuration for Janice, Samsung Galaxy S Advance GT-I9070 */
 static const struct isa1200_config isa1200_janice = {
 	.ldo_voltage = ISA1200_LDO_VOLTAGE_30V,
-	.pwm_in = false,
 	.clkdiv = ISA1200_HCTRL0_DIV_256,
 	.plldiv = 2,
 	.freq = 0,
-	.duty = 0x3b,
 	.period = 0x77,
 };
 
 /* Configuration for Gavini, Samsung Galaxy Beam GT-I8350 */
 static const struct isa1200_config isa1200_gavini = {
 	.ldo_voltage = ISA1200_LDO_VOLTAGE_27V,
-	.pwm_in = false,
 	.clkdiv = ISA1200_HCTRL0_DIV_256,
 	.plldiv = 2,
 	.freq = 0,
-	.duty = 0x46,
 	.period = 0x8c,
 };
 
