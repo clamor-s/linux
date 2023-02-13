@@ -35,82 +35,105 @@
 #define SII9234_SCRATCHPAD_SIZE		0x10
 #define SII9234_INT_STAT_SIZE		0x33
 
-#define BIT_TMDS_CCTRL_TMDS_OE		BIT(4)
-#define MHL_HPD_OUT_OVR_EN		BIT(4)
-#define MHL_HPD_OUT_OVR_VAL		BIT(5)
-#define MHL_INIT_TIMEOUT		0x0C
-
 /* MHL Tx registers and bits */
+#define MHL_TX_IDL_REG			0x02
+#define MHL_TX_IDH_REG			0x03
+#define MHL_TX_REV_REG			0x04
 #define MHL_TX_SRST			0x05
+#define   BIT_CBUS_RESET		BIT(3)
 #define MHL_TX_SYSSTAT_REG		0x09
+#define   RSEN_STATUS			BIT(2)
+
 #define MHL_TX_INTR1_REG		0x71
+#define   HPD_CHANGE_INT		BIT(6)
+#define   RSEN_CHANGE_INT		BIT(5)
+#define MHL_TX_INTR2_REG		0x72	/* Not Documented */
+#define MHL_TX_INTR3_REG		0x73	/* Not Documented */
 #define MHL_TX_INTR4_REG		0x74
+#define   RGND_READY_INT		BIT(6)
+#define   VBUS_LOW_INT			BIT(5)
+#define   CBUS_LKOUT_INT		BIT(4)
+#define   MHL_DISC_FAIL_INT		BIT(3)
+#define   MHL_EST_INT			BIT(2)
 #define MHL_TX_INTR1_ENABLE_REG		0x75
+#define   HPD_CHANGE_INT_MASK		BIT(6)
+#define   RSEN_CHANGE_INT_MASK		BIT(5)
+#define MHL_TX_INTR2_ENABLE_REG		0x76	/* Not Documented */
+#define MHL_TX_INTR3_ENABLE_REG		0x77	/* Not Documented */
 #define MHL_TX_INTR4_ENABLE_REG		0x78
+#define   RGND_READY_MASK		BIT(6)
+#define   CBUS_LKOUT_MASK		BIT(4)
+#define   MHL_DISC_FAIL_MASK		BIT(3)
+#define   MHL_EST_MASK			BIT(2)
 #define MHL_TX_INT_CTRL_REG		0x79
+#define   MHL_HPD_OUT_OVR_VAL		BIT(5)
+#define   MHL_HPD_OUT_OVR_EN		BIT(4)
 #define MHL_TX_TMDS_CCTRL		0x80
+#define   BIT_TMDS_CCTRL_TMDS_OE	BIT(4)
+
 #define MHL_TX_DISC_CTRL1_REG		0x90
+#define   DISC_EN			BIT(0)
 #define MHL_TX_DISC_CTRL2_REG		0x91
+#define   SKIP_GND			BIT(6)
+#define   ATT_THRESH_SHIFT		0x04
+#define   ATT_THRESH_MASK		(0x03 << ATT_THRESH_SHIFT)
+#define   USB_D_OEN			BIT(3)
+#define   DEGLITCH_TIME_MASK		0x07
+#define   DEGLITCH_TIME_2MS		0
+#define   DEGLITCH_TIME_4MS		1
+#define   DEGLITCH_TIME_8MS		2
+#define   DEGLITCH_TIME_16MS		3
+#define   DEGLITCH_TIME_40MS		4
+#define   DEGLITCH_TIME_50MS		5
+#define   DEGLITCH_TIME_60MS		6
+#define   DEGLITCH_TIME_128MS		7
 #define MHL_TX_DISC_CTRL3_REG		0x92
-#define MHL_TX_DISC_CTRL4_REG		0x93
+#define   DISC_CTRL3_COMM_IMME		BIT(7)
+#define   DISC_CTRL3_FORCE_MHL		BIT(6)
+#define   DISC_CTRL3_FORCE_USB		BIT(4)
+#define   DISC_CTRL3_USB_EN		BIT(3)
+#define MHL_TX_DISC_CTRL4_REG		0x93	/* Not Documented */
+#define   CBUS_DISC_PUP_SEL_SHIFT	6
+#define   CBUS_DISC_PUP_SEL_MASK	(0x03 << CBUS_DISC_PUP_SEL_SHIFT)
+#define   CBUS_DISC_PUP_SEL_10K		(0x02 << CBUS_DISC_PUP_SEL_SHIFT)
+#define   CBUS_DISC_PUP_SEL_OPEN	(0x00 << CBUS_DISC_PUP_SEL_SHIFT)
+#define   CBUS_IDLE_PUP_SEL_SHIFT	4
+#define   CBUS_IDLE_PUP_SEL_MASK	(0x03 << CBUS_IDLE_PUP_SEL_SHIFT)
+#define   CBUS_IDLE_PUP_SEL_OPEN	(0x00 << CBUS_IDLE_PUP_SEL_SHIFT)
 #define MHL_TX_DISC_CTRL5_REG		0x94
+#define   CBUS_MHL_PUP_SEL_MASK		0x03	/* Not Documented */
+#define   CBUS_MHL_PUP_SEL_5K		0x01	/* Not Documented */
+#define   CBUS_MHL_PUP_SEL_OPEN		0x00
 #define MHL_TX_DISC_CTRL6_REG		0x95
+#define   USB_D_OVR			BIT(7)
+#define   USB_ID_OVR			BIT(6)
+#define   DVRFLT_SEL			BIT(5)
+#define   BLOCK_RGND_INT		BIT(4)
+#define   SKIP_DEG			BIT(3)
+#define   CI2CA_POL			BIT(2)
+#define   CI2CA_WKUP			BIT(1)
+#define   SINGLE_ATT			BIT(0)
 #define MHL_TX_DISC_CTRL7_REG		0x96
-#define MHL_TX_DISC_CTRL8_REG		0x97
+/*
+ * Bits 7 and 6 are labeled as reserved but seem to be related to toggling
+ * the CBUS signal when generating the wake pulse sequence.
+ */
+#define   USB_D_ODN			BIT(5)
+#define   VBUS_CHECK			BIT(2)
+#define   RGND_INTP_MASK		0x03
+#define   RGND_INTP_OPEN		0
+#define   RGND_INTP_2K			1
+#define   RGND_INTP_1K			2
+#define   RGND_INTP_SHORT		3
+#define MHL_TX_DISC_CTRL8_REG		0x97	/* Not Documented */
+#define MHL_TX_STAT1_REG		0x98	/* Not Documented */
 #define MHL_TX_STAT2_REG		0x99
+
 #define MHL_TX_MHLTX_CTL1_REG		0xA0
 #define MHL_TX_MHLTX_CTL2_REG		0xA1
 #define MHL_TX_MHLTX_CTL4_REG		0xA3
 #define MHL_TX_MHLTX_CTL6_REG		0xA5
 #define MHL_TX_MHLTX_CTL7_REG		0xA6
-
-#define RSEN_STATUS			BIT(2)
-#define HPD_CHANGE_INT			BIT(6)
-#define RSEN_CHANGE_INT			BIT(5)
-#define RGND_READY_INT			BIT(6)
-#define VBUS_LOW_INT			BIT(5)
-#define CBUS_LKOUT_INT			BIT(4)
-#define MHL_DISC_FAIL_INT		BIT(3)
-#define MHL_EST_INT			BIT(2)
-#define HPD_CHANGE_INT_MASK		BIT(6)
-#define RSEN_CHANGE_INT_MASK		BIT(5)
-
-#define RGND_READY_MASK			BIT(6)
-#define CBUS_LKOUT_MASK			BIT(4)
-#define MHL_DISC_FAIL_MASK		BIT(3)
-#define MHL_EST_MASK			BIT(2)
-
-#define SKIP_GND			BIT(6)
-
-#define ATT_THRESH_SHIFT		0x04
-#define ATT_THRESH_MASK			(0x03 << ATT_THRESH_SHIFT)
-#define USB_D_OEN			BIT(3)
-#define DEGLITCH_TIME_MASK		0x07
-#define DEGLITCH_TIME_2MS		0
-#define DEGLITCH_TIME_4MS		1
-#define DEGLITCH_TIME_8MS		2
-#define DEGLITCH_TIME_16MS		3
-#define DEGLITCH_TIME_40MS		4
-#define DEGLITCH_TIME_50MS		5
-#define DEGLITCH_TIME_60MS		6
-#define DEGLITCH_TIME_128MS		7
-
-#define USB_D_OVR			BIT(7)
-#define USB_ID_OVR			BIT(6)
-#define DVRFLT_SEL			BIT(5)
-#define BLOCK_RGND_INT			BIT(4)
-#define SKIP_DEG			BIT(3)
-#define CI2CA_POL			BIT(2)
-#define CI2CA_WKUP			BIT(1)
-#define SINGLE_ATT			BIT(0)
-
-#define USB_D_ODN			BIT(5)
-#define VBUS_CHECK			BIT(2)
-#define RGND_INTP_MASK			0x03
-#define RGND_INTP_OPEN			0
-#define RGND_INTP_2K			1
-#define RGND_INTP_1K			2
-#define RGND_INTP_SHORT			3
 
 /* HDMI registers */
 #define HDMI_RX_TMDS0_CCTRL1_REG	0x10
@@ -128,19 +151,50 @@
 
 /* CBUS registers */
 #define CBUS_INT_STATUS_1_REG		0x08
+#define   MSC_RESP_ABORT		BIT(6)
+#define   MSC_REQ_ABORT			BIT(5)
+#define   MSC_REQ_DONE			BIT(4)
+#define   MSC_MSG_RECD			BIT(3)
+#define   CBUS_DDC_ABORT		BIT(2)
 #define CBUS_INTR1_ENABLE_REG		0x09
+#define   MSC_RESP_ABORT_MASK		BIT(6)
+#define   MSC_REQ_ABORT_MASK		BIT(5)
+#define   MSC_REQ_DONE_MASK		BIT(4)
+#define   MSC_MSG_RECD_MASK		BIT(3)
+#define   CBUS_DDC_ABORT_MASK		BIT(2)
 #define CBUS_MSC_REQ_ABORT_REASON_REG	0x0D
+#define   ABORT_BY_PEER			BIT(7)
+#define   SET_HPD_DOWNSTREAM		BIT(6)
+#define   UNDEF_CMD			BIT(3)
+#define   TIMEOUT			BIT(2)
+#define   PROTO_ERROR			BIT(1)
+#define   MAX_FAIL			BIT(0)
+#define CBUS_MSC_RESP_ABORT_REASON_REG	0x0E
+#define   ABORT_BY_PEER			BIT(7)
+#define   UNDEF_CMD			BIT(3)
+#define   TIMEOUT			BIT(2)
+#define CBUS_MSC_RETRY_FAIL_LIM_REG	0x1D	/* Retry count for all MSC commands */
 #define CBUS_INT_STATUS_2_REG		0x1E
+#define   WRT_STAT_RECD			BIT(3)
+#define   SET_INT_RECD			BIT(2)
+#define   WRT_BURST_RECD		BIT(0)
 #define CBUS_INTR2_ENABLE_REG		0x1F
+#define   WRT_STAT_RECD_MASK		BIT(3)
+#define   SET_INT_RECD_MASK		BIT(2)
+#define   WRT_BURST_RECD_MASK		BIT(0)
 #define CBUS_LINK_CONTROL_2_REG		0x31
+#define   MHL_INIT_TIMEOUT		0x0C
 #define CBUS_MHL_STATUS_REG_0		0xB0
 #define CBUS_MHL_STATUS_REG_1		0xB1
 
-#define BIT_CBUS_RESET			BIT(3)
-#define SET_HPD_DOWNSTREAM		BIT(6)
-
 /* TPI registers */
 #define TPI_DPD_REG			0x3D
+#define   TPI_PD_TMDS			BIT(5)
+#define   TPI_PD_OSC_EN			BIT(4)
+#define   TPI_TCLK_PHASE		BIT(3)
+#define   TPI_PD_IDCK			BIT(2)
+#define   TPI_PD_OSC			BIT(1)
+#define   TPI_PD			BIT(0)
 
 /* Timeouts in msec */
 #define T_SRC_VBUS_CBUS_TO_STABLE	200
@@ -395,7 +449,8 @@ static void force_usb_id_switch_open(struct sii9234 *ctx)
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL6_REG, ~0, USB_ID_OVR);
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL3_REG, ~0, 0x86);
 	/* Force upstream HPD to 0 when not in MHL mode. */
-	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, 0, 0x30);
+	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, 0,
+		       MHL_HPD_OUT_OVR_VAL | MHL_HPD_OUT_OVR_EN);
 }
 
 static void release_usb_id_switch_open(struct sii9234 *ctx)
@@ -538,8 +593,8 @@ static int sii9234_reset(struct sii9234 *ctx)
 	release_usb_id_switch_open(ctx);
 
 	/* Force upstream HPD to 0 when not in MHL mode */
-	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, 0, 1 << 5);
-	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, ~0, 1 << 4);
+	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, 0, MHL_HPD_OUT_OVR_VAL);
+	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, ~0, MHL_HPD_OUT_OVR_EN);
 
 	return sii9234_clear_error(ctx);
 }
@@ -966,12 +1021,14 @@ static void sii9234_remove(struct i2c_client *client)
 
 static const struct of_device_id sii9234_dt_match[] = {
 	{ .compatible = "sil,sii9234" },
+	{ .compatible = "sil,sii9244" },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, sii9234_dt_match);
 
 static const struct i2c_device_id sii9234_id[] = {
 	{ "SII9234", 0 },
+	{ "SII9244", 0 },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, sii9234_id);
