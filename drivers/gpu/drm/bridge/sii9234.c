@@ -17,8 +17,10 @@
 #include <drm/drm_crtc.h>
 #include <drm/drm_edid.h>
 
+#include <linux/devm-helpers.h>
 #include <linux/delay.h>
 #include <linux/err.h>
+#include <linux/extcon.h>
 #include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
@@ -230,6 +232,10 @@ struct sii9234 {
 
 	struct mutex lock; /* Protects fields below and device registers */
 	enum sii9234_state state;
+
+	struct extcon_dev *edev;
+	struct notifier_block extcon_nb;
+	struct work_struct extcon_work;
 };
 
 enum sii9234_client_id {
@@ -679,6 +685,31 @@ unlock:
 	mutex_unlock(&ctx->lock);
 }
 
+static void sii9234_extcon_evt_worker(struct work_struct *work)
+{
+	struct sii9234 *ctx = container_of(work, struct sii9234, extcon_work);
+	struct device *dev = ctx->dev;
+	struct extcon_dev *edev = ctx->edev;
+
+	if (extcon_get_state(edev, EXTCON_DISP_MHL) > 0) {
+		dev_dbg(dev, "MHL plug is connected\n");
+		sii9234_cable_in(ctx);
+	} else {
+		dev_dbg(dev, "MHL plug is disconnected\n");
+		sii9234_cable_out(ctx);
+	}
+}
+
+static int extcon_get_mlh_state(struct notifier_block *nb,
+				unsigned long state, void *data)
+{
+	struct sii9234 *ctx = container_of(nb, struct sii9234, extcon_nb);
+
+	schedule_work(&ctx->extcon_work);
+
+	return NOTIFY_OK;
+}
+
 static enum sii9234_state sii9234_rgnd_ready_irq(struct sii9234 *ctx)
 {
 	int value;
@@ -996,6 +1027,27 @@ static int sii9234_probe(struct i2c_client *client)
 		return ret;
 	}
 
+	if (device_property_present(dev, "extcon")) {
+		ctx->edev = extcon_get_edev_by_phandle(dev, 0);
+		if (IS_ERR(ctx->edev))
+			return dev_err_probe(dev, PTR_ERR(ctx->edev),
+					     "failed to register extcon\n");
+
+		ret = devm_work_autocancel(dev, &ctx->extcon_work,
+					   sii9234_extcon_evt_worker);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "failed to add extcon evt stop action\n");
+
+		ctx->extcon_nb.notifier_call = extcon_get_mlh_state;
+
+		ret = devm_extcon_register_notifier_all(dev, ctx->edev,
+							&ctx->extcon_nb);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "failed to register notifier\n");
+	}
+
 	ret = sii9234_init_resources(ctx, client);
 	if (ret < 0)
 		return ret;
@@ -1006,8 +1058,6 @@ static int sii9234_probe(struct i2c_client *client)
 	ctx->bridge.of_node = dev->of_node;
 	drm_bridge_add(&ctx->bridge);
 
-	sii9234_cable_in(ctx);
-
 	return 0;
 }
 
@@ -1015,7 +1065,6 @@ static void sii9234_remove(struct i2c_client *client)
 {
 	struct sii9234 *ctx = i2c_get_clientdata(client);
 
-	sii9234_cable_out(ctx);
 	drm_bridge_remove(&ctx->bridge);
 }
 
