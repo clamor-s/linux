@@ -168,6 +168,7 @@ enum sii9234_state {
 struct sii9234 {
 	struct i2c_client *client[4];
 	struct drm_bridge bridge;
+	struct drm_bridge *next_bridge;
 	struct device *dev;
 	struct gpio_desc *gpio_reset;
 	int i2c_error;
@@ -867,6 +868,23 @@ static int sii9234_init_resources(struct sii9234 *ctx,
 	return 0;
 }
 
+static inline struct sii9234 *bridge_to_sii9234(struct drm_bridge *bridge)
+{
+	return container_of(bridge, struct sii9234, bridge);
+}
+
+static int sii9234_attach(struct drm_bridge *bridge,
+			  enum drm_bridge_attach_flags flags)
+{
+	struct sii9234 *ctx = bridge_to_sii9234(bridge);
+
+	if (!(flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR))
+		return -EINVAL;
+
+	return drm_bridge_attach(bridge->encoder, ctx->next_bridge,
+				 bridge, flags);
+}
+
 static enum drm_mode_status sii9234_mode_valid(struct drm_bridge *bridge,
 					 const struct drm_display_info *info,
 					 const struct drm_display_mode *mode)
@@ -878,7 +896,8 @@ static enum drm_mode_status sii9234_mode_valid(struct drm_bridge *bridge,
 }
 
 static const struct drm_bridge_funcs sii9234_bridge_funcs = {
-	.mode_valid = sii9234_mode_valid,
+	.attach		= sii9234_attach,
+	.mode_valid	= sii9234_mode_valid,
 };
 
 static int sii9234_probe(struct i2c_client *client)
@@ -898,6 +917,13 @@ static int sii9234_probe(struct i2c_client *client)
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA)) {
 		dev_err(dev, "I2C adapter lacks SMBUS feature\n");
 		return -EIO;
+	}
+
+	/* Get the next bridge in the pipeline. */
+	ctx->next_bridge = devm_drm_of_get_bridge(dev, dev->of_node, 1, 0);
+	if (!ctx->next_bridge) {
+		dev_dbg(dev, "Next bridge not found, deferring probe\n");
+		return -EPROBE_DEFER;
 	}
 
 	if (!client->irq) {
