@@ -33,7 +33,7 @@
 
 #define CBUS_DEVCAP_OFFSET		0x80
 
-#define SII9234_MHL_VERSION		0x11
+#define SII9234_MHL_VERSION		0x10 // 0x11
 #define SII9234_SCRATCHPAD_SIZE		0x10
 #define SII9234_INT_STAT_SIZE		0x33
 
@@ -389,12 +389,12 @@ static int sii9234_cbus_reset(struct sii9234 *ctx)
 		 * Enable WRITE_STAT interrupt for writes to all
 		 * 4 MSC Status registers.
 		 */
-		cbus_writeb(ctx, 0xE0 + i, 0xF2);
+//		cbus_writeb(ctx, 0xE0 + i, 0xF2);
 		/*
 		 * Enable SET_INT interrupt for writes to all
 		 * 4 MSC Interrupt registers.
 		 */
-		cbus_writeb(ctx, 0xF0 + i, 0xF2);
+//		cbus_writeb(ctx, 0xF0 + i, 0xF2);
 	}
 
 	return sii9234_clear_error(ctx);
@@ -417,20 +417,22 @@ static int sii9234_cbus_init(struct sii9234 *ctx)
 		    SII9234_MHL_VERSION);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_CAT,
 		    MHL_DCAP_CAT_SOURCE);
-	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_ADOPTER_ID_H, 0x01);
-	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_ADOPTER_ID_L, 0x41);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_ADOPTER_ID_H, 0x02); // 0x01);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_ADOPTER_ID_L, 0x40); // 0x41);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_VID_LINK_MODE,
 		    MHL_DCAP_VID_LINK_RGB444 | MHL_DCAP_VID_LINK_YCBCR444);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_AUD_LINK_MODE,
+		    MHL_DCAP_AUD_LINK_2CH);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_VIDEO_TYPE,
 		    MHL_DCAP_VT_GRAPHICS);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_LOG_DEV_MAP,
 		    MHL_DCAP_LD_GUI);
-	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_BANDWIDTH, 0x0F);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_BANDWIDTH, 0x05); // 0x0F);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_FEATURE_FLAG,
 		    MHL_DCAP_FEATURE_RCP_SUPPORT | MHL_DCAP_FEATURE_RAP_SUPPORT
 			| MHL_DCAP_FEATURE_SP_SUPPORT);
-	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_DEVICE_ID_H, 0x0);
-	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_DEVICE_ID_L, 0x0);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_DEVICE_ID_H, 0x5c); // 0x0);
+	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_DEVICE_ID_L, 0x2c); // 0x0);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_SCRATCHPAD_SIZE,
 		    SII9234_SCRATCHPAD_SIZE);
 	cbus_writeb(ctx, CBUS_DEVCAP_OFFSET + MHL_DCAP_INT_STAT_SIZE,
@@ -453,7 +455,7 @@ static void force_usb_id_switch_open(struct sii9234 *ctx)
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL1_REG, 0, 0x01);
 	/* Force USB ID switch to open */
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL6_REG, ~0, USB_ID_OVR);
-	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL3_REG, ~0, 0x86);
+	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL3_REG, ~0, 0xa6); // 0x86);
 	/* Force upstream HPD to 0 when not in MHL mode. */
 	mhl_tx_writebm(ctx, MHL_TX_INT_CTRL_REG, 0,
 		       MHL_HPD_OUT_OVR_VAL | MHL_HPD_OUT_OVR_EN);
@@ -493,7 +495,7 @@ static int sii9234_hdmi_init(struct sii9234 *ctx)
 	hdmi_writeb(ctx, HDMI_RX_EQ_DATA4_REG, 0xEA);
 	hdmi_writeb(ctx, HDMI_RX_TMDS_ZONE_CTRL_REG, 0xA0);
 	hdmi_writeb(ctx, HDMI_RX_TMDS_MODE_CTRL_REG, 0x00);
-	mhl_tx_writeb(ctx, MHL_TX_TMDS_CCTRL, 0x34);
+	mhl_tx_writeb(ctx, MHL_TX_TMDS_CCTRL, 0x24); // 0x34);
 	hdmi_writeb(ctx, 0x45, 0x44);
 	hdmi_writeb(ctx, 0x31, 0x0A);
 	hdmi_writeb(ctx, HDMI_RX_TMDS0_CCTRL1_REG, 0xC1);
@@ -518,9 +520,6 @@ static int sii9234_reset(struct sii9234 *ctx)
 	sii9234_clear_error(ctx);
 
 	ret = sii9234_power_init(ctx);
-	if (ret < 0)
-		return ret;
-	ret = sii9234_cbus_reset(ctx);
 	if (ret < 0)
 		return ret;
 	ret = sii9234_hdmi_init(ctx);
@@ -579,6 +578,10 @@ static int sii9234_reset(struct sii9234 *ctx)
 	ret = sii9234_clear_error(ctx);
 	if (ret < 0)
 		return ret;
+
+	ret = sii9234_cbus_reset(ctx);
+	if (ret < 0)
+		return ret;
 	ret = sii9234_cbus_init(ctx);
 	if (ret < 0)
 		return ret;
@@ -609,7 +612,7 @@ static int sii9234_goto_d3(struct sii9234 *ctx)
 {
 	int ret;
 
-	dev_dbg(ctx->dev, "sii9234: detection started d3\n");
+	dev_err(ctx->dev, "sii9234: detection started d3\n");
 
 	ret = sii9234_reset(ctx);
 	if (ret < 0)
@@ -692,10 +695,10 @@ static void sii9234_extcon_evt_worker(struct work_struct *work)
 	struct extcon_dev *edev = ctx->edev;
 
 	if (extcon_get_state(edev, EXTCON_DISP_MHL) > 0) {
-		dev_dbg(dev, "MHL plug is connected\n");
+		dev_err(dev, "MHL plug is connected\n");
 		sii9234_cable_in(ctx);
 	} else {
-		dev_dbg(dev, "MHL plug is disconnected\n");
+		dev_err(dev, "MHL plug is disconnected\n");
 		sii9234_cable_out(ctx);
 	}
 }
@@ -717,7 +720,7 @@ static enum sii9234_state sii9234_rgnd_ready_irq(struct sii9234 *ctx)
 	if (ctx->state == ST_D3) {
 		int ret;
 
-		dev_dbg(ctx->dev, "RGND_READY_INT\n");
+		dev_err(ctx->dev, "RGND_READY_INT\n");
 		sii9234_hw_reset(ctx);
 
 		ret = sii9234_reset(ctx);
@@ -741,7 +744,7 @@ static enum sii9234_state sii9234_rgnd_ready_irq(struct sii9234 *ctx)
 		dev_warn(ctx->dev, "RGND is not 1k\n");
 		return ST_RGND_INIT;
 	}
-	dev_dbg(ctx->dev, "RGND 1K!!\n");
+	dev_err(ctx->dev, "RGND 1K!!\n");
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL4_REG, ~0, 0x8C);
 	mhl_tx_writeb(ctx, MHL_TX_DISC_CTRL5_REG, 0x77);
 	mhl_tx_writebm(ctx, MHL_TX_DISC_CTRL6_REG, ~0, 0x05);
@@ -754,7 +757,7 @@ static enum sii9234_state sii9234_rgnd_ready_irq(struct sii9234 *ctx)
 
 static enum sii9234_state sii9234_mhl_established(struct sii9234 *ctx)
 {
-	dev_dbg(ctx->dev, "mhl est interrupt\n");
+	dev_err(ctx->dev, "mhl est interrupt\n");
 
 	/* Discovery override */
 	mhl_tx_writeb(ctx, MHL_TX_MHLTX_CTL1_REG, 0x10);
@@ -805,10 +808,10 @@ static enum sii9234_state sii9234_rsen_change(struct sii9234 *ctx)
 		return ST_FAILURE;
 
 	if (value & RSEN_STATUS) {
-		dev_dbg(ctx->dev, "MHL cable connected.. RSEN High\n");
+		dev_err(ctx->dev, "MHL cable connected.. RSEN High\n");
 		return ST_RSEN_HIGH;
 	}
-	dev_dbg(ctx->dev, "RSEN lost\n");
+	dev_err(ctx->dev, "RSEN lost\n");
 	/*
 	 * Once RSEN loss is confirmed,we need to check
 	 * based on cable status and chip power status,whether
@@ -820,13 +823,13 @@ static enum sii9234_state sii9234_rsen_change(struct sii9234 *ctx)
 	value = mhl_tx_readb(ctx, MHL_TX_SYSSTAT_REG);
 	if (value < 0)
 		return ST_FAILURE;
-	dev_dbg(ctx->dev, "sys_stat: %x\n", value);
+	dev_err(ctx->dev, "sys_stat: %x\n", value);
 
 	if (value & RSEN_STATUS) {
-		dev_dbg(ctx->dev, "RSEN recovery\n");
+		dev_err(ctx->dev, "RSEN recovery\n");
 		return ST_RSEN_HIGH;
 	}
-	dev_dbg(ctx->dev, "RSEN Really LOW\n");
+	dev_err(ctx->dev, "RSEN Really LOW\n");
 	/* To meet CTS 3.3.22.2 spec */
 	sii9234_tmds_control(ctx, false);
 	force_usb_id_switch_open(ctx);
@@ -837,12 +840,13 @@ static enum sii9234_state sii9234_rsen_change(struct sii9234 *ctx)
 
 static irqreturn_t sii9234_irq_thread(int irq, void *data)
 {
+#if 0
 	struct sii9234 *ctx = data;
 	int intr1, intr4;
 	int intr1_en, intr4_en;
 	int cbus_intr1, cbus_intr2;
 
-	dev_dbg(ctx->dev, "%s\n", __func__);
+	dev_err(ctx->dev, "%s\n", __func__);
 
 	mutex_lock(&ctx->lock);
 
@@ -856,7 +860,7 @@ static irqreturn_t sii9234_irq_thread(int irq, void *data)
 	if (sii9234_clear_error(ctx))
 		goto done;
 
-	dev_dbg(ctx->dev, "irq %02x/%02x %02x/%02x %02x/%02x\n",
+	dev_err(ctx->dev, "irq %02x/%02x %02x/%02x %02x/%02x\n",
 		intr1, intr1_en, intr4, intr4_en, cbus_intr1, cbus_intr2);
 
 	if (intr4 & RGND_READY_INT)
@@ -884,7 +888,7 @@ static irqreturn_t sii9234_irq_thread(int irq, void *data)
 	sii9234_clear_error(ctx);
 
 	if (ctx->state == ST_FAILURE) {
-		dev_dbg(ctx->dev, "try to reset after failure\n");
+		dev_err(ctx->dev, "try to reset after failure\n");
 		sii9234_hw_reset(ctx);
 		sii9234_goto_d3(ctx);
 	}
@@ -896,7 +900,7 @@ static irqreturn_t sii9234_irq_thread(int irq, void *data)
 	}
 
 	mutex_unlock(&ctx->lock);
-
+#endif
 	return IRQ_HANDLED;
 }
 
@@ -1008,7 +1012,7 @@ static int sii9234_probe(struct i2c_client *client)
 	/* Get the next bridge in the pipeline. */
 	ctx->next_bridge = devm_drm_of_get_bridge(dev, dev->of_node, 1, 0);
 	if (!ctx->next_bridge) {
-		dev_dbg(dev, "Next bridge not found, deferring probe\n");
+		dev_err(dev, "Next bridge not found, deferring probe\n");
 		return -EPROBE_DEFER;
 	}
 
