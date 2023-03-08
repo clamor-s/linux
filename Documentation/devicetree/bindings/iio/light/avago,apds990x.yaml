@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/light/avago,apds990x.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Avago APDS990x ALS and proximity sensor
+
+maintainers:
+  - Samu Onkalo <samu.p.onkalo@nokia.com>
+
+description: |
+  APDS990x is a combined ambient light and proximity sensor. ALS and
+  proximity functionality are highly connected. ALS measurement path
+  must be running while the proximity functionality is enabled.
+
+properties:
+  compatible:
+    const: avago,apds990x
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  vdd-supply: true
+  vled-supply: true
+
+  avago,pdrive:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 32
+    description: |
+      Drive value used in configuring control register.
+
+  avago,ppcount:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 32
+    description: |
+      Number of pulses used for proximity sensor calibration.
+
+additionalProperties: false
+
+required:
+  - compatible
+  - reg
+  - interrupt
+  - vdd-supply
+  - vled-supply
+  - avago,pdrive
+  - avago,ppcount
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        light-sensor@39 {
+            compatible = "avago,apds990x";
+            reg = <0x39>;
+
+            interrupt-parent = <&gpio>;
+            interrupts = <82 IRQ_TYPE_EDGE_RISING>;
+
+            vdd-supply = <&vdd_3v0_proxi>;
+            vled-supply = <&vdd_1v8_sen>;
+
+            avago,pdrive = <0x00>;
+            avago,ppcount = <0x03>;
+        };
+    };
+...
