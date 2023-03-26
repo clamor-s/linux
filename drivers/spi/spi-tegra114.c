@@ -729,14 +729,14 @@ static int tegra_spi_set_hw_cs_timing(struct spi_device *spi)
 	u32 inactive_cycles;
 	u8 cs_state;
 
-	if ((setup && setup->unit != SPI_DELAY_UNIT_SCK) ||
-	    (hold && hold->unit != SPI_DELAY_UNIT_SCK) ||
-	    (inactive && inactive->unit != SPI_DELAY_UNIT_SCK)) {
-		dev_err(&spi->dev,
-			"Invalid delay unit %d, should be SPI_DELAY_UNIT_SCK\n",
-			SPI_DELAY_UNIT_SCK);
-		return -EINVAL;
-	}
+//	if ((setup && setup->unit != SPI_DELAY_UNIT_SCK) ||
+//	    (hold && hold->unit != SPI_DELAY_UNIT_SCK) ||
+//	    (inactive && inactive->unit != SPI_DELAY_UNIT_SCK)) {
+//		dev_err(&spi->dev,
+//			"Invalid delay unit %d, should be SPI_DELAY_UNIT_SCK\n",
+//			SPI_DELAY_UNIT_SCK);
+//		return -EINVAL;
+//	}
 
 	setup_dly = setup ? setup->value : 0;
 	hold_dly = hold ? hold->value : 0;
