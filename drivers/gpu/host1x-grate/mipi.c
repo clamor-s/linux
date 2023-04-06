@@ -144,12 +144,15 @@ struct tegra_mipi_device {
 static inline u32 tegra_mipi_readl(struct tegra_mipi *mipi,
 				   unsigned long offset)
 {
-	return readl(mipi->regs + (offset << 2));
+	u32 data = readl(mipi->regs + (offset << 2));
+	dev_err(mipi->dev, "read 0x%x << 0x%lx\n", data, offset);
+	return data;
 }
 
 static inline void tegra_mipi_writel(struct tegra_mipi *mipi, u32 value,
 				     unsigned long offset)
 {
+	dev_err(mipi->dev, "write 0x%x >> 0x%lx\n", value, offset);
 	writel(value, mipi->regs + (offset << 2));
 }
 
