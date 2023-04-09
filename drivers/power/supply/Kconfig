@@ -109,7 +109,7 @@ config BATTERY_ACT8945A
 
 config BATTERY_ASUSEC
 	tristate "Asus Transformer Pad battery driver"
-	depends on MFD_ASUSEC
+	depends on MFD_ASUSEC || POWER_ASUSEC
 	help
 	  Say Y here to enable support APM status emulation using
 	  battery class devices.
@@ -120,10 +120,23 @@ config BATTERY_ASUSEC
 
 config CHARGER_ASUSEC
 	tristate "Asus Transformer Pad charger driver"
-	depends on MFD_ASUSEC
+	depends on MFD_ASUSEC || POWER_ASUSEC
 	help
 	  Say Y here to enable support AC plug detection on Asus Transformer
 	  Dock.
+
+config POWER_ASUSEC
+	tristate "ASUS fuel gauge controller driver"
+	depends on I2C && OF
+	select ASUS_DOCKRAM
+	help
+	  Support fuel gauge EC found in ASUS TF600T and TF701T Mobile Docks.
+
+	  This provides shared glue for functional part drivers:
+	    asusec-battery and asusec-charger.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called asus-ec-power.
 
 config BATTERY_CHAGALL
 	tristate "Pegatron Chagall battery driver"
