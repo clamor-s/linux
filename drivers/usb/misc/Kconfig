@@ -318,3 +318,11 @@ config USB_ONBOARD_HUB
 	  this config will enable the driver and it will automatically
 	  match the state of the USB subsystem. If this driver is a
 	  module it will be called onboard_usb_hub.
+
+config USB_XMM626X_POWER
+	tristate "Infineon XMM626X Baseband Power supply support"
+	help
+	  This driver provides support for Infineon XMM626X modem power
+	  supply and modes switch.
+
+	  To compile this driver as a module, choose M here.
