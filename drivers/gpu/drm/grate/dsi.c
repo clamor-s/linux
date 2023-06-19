@@ -1608,7 +1608,7 @@ static int tegra_dsi_probe(struct platform_device *pdev)
 		return dev_err_probe(&pdev->dev, PTR_ERR(dsi->clk),
 				     "cannot get DSI clock\n");
 
-	dsi->clk_lp = devm_clk_get(&pdev->dev, "lp");
+	dsi->clk_lp = devm_clk_get_optional(&pdev->dev, "lp");
 	if (IS_ERR(dsi->clk_lp))
 		return dev_err_probe(&pdev->dev, PTR_ERR(dsi->clk_lp),
 				     "cannot get low-power clock\n");
