@@ -321,6 +321,7 @@
 			clock-names = "dsi", "parent";
 			resets = <&tegra_car 48>;
 			reset-names = "dsi";
+			nvidia,mipi-calibrate = <&mipi 0x220>;
 			power-domains = <&pd_core>;
 			operating-points-v2 = <&dsia_dvfs_opp_table>;
 			status = "disabled";
@@ -337,6 +338,7 @@
 			clock-names = "dsi", "parent";
 			resets = <&tegra_car 84>;
 			reset-names = "dsi";
+			nvidia,mipi-calibrate = <&mipi 0x220>;
 			power-domains = <&pd_core>;
 			operating-points-v2 = <&dsib_dvfs_opp_table>;
 			status = "disabled";
@@ -371,6 +373,15 @@
 		arm,tag-latency = <5 5 2>;
 		cache-unified;
 		cache-level = <2>;
+	};
+
+	mipi: mipi@54080000 {
+		compatible = "nvidia,tegra30-mipi";
+		reg = <0x54080000 0x00040000>;
+		clocks = <&tegra_car TEGRA30_CLK_VI>,
+			 <&tegra_car TEGRA30_CLK_CSI>;
+		clock-names = "vi", "csi";
+		#nvidia,mipi-calibrate-cells = <1>;
 	};
 
 	lic: interrupt-controller@60004000 {
