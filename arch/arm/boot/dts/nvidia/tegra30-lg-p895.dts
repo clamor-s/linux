@@ -1862,10 +1862,7 @@
 	};
 
 	/* Modem line */
-	/* usb@7d004000 {
-		status = "okay";
-		phy_type = "hsic";
-	};
+	/delete-node/ usb@7d004000;
 
 	usb-phy@7d004000 {
 		status = "okay";
@@ -1875,11 +1872,13 @@
 			 <&tegra_car TEGRA30_CLK_USB2>;
 		clock-names = "reg", "pll_u", "hsic-clk";
 
+		vbus-supply = <&vdd_3v3_vbat>;
+
 		nvidia,phy-enable-gpio = <&gpio TEGRA_GPIO(U, 5)
 			GPIO_ACTIVE_HIGH>;
 	};
 
-	modem-power {
+	modem {
 		compatible = "infineon,xmm6260-power";
 
 		enable-gpios = <&gpio TEGRA_GPIO(O, 0) GPIO_ACTIVE_HIGH>;
@@ -1893,8 +1892,22 @@
 
 		vbat-supply = <&vdd_3v3_vbat>;
 
-		modem,phy = <&usb2_phy>;
-	}; */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb@7d004000 {
+			compatible = "nvidia,tegra30-ehci";
+			reg = <0x7d004000 0x4000>;
+			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+			phy_type = "hsic";
+			clocks = <&tegra_car TEGRA30_CLK_USB2>;
+			resets = <&tegra_car 58>;
+			reset-names = "usb";
+			nvidia,phy = <&phy2>;
+			power-domains = <&pd_core>;
+			operating-points-v2 = <&usb2_dvfs_opp_table>;
+		};
+	};
 
 	battery: battery-cell {
 		compatible = "simple-battery";
