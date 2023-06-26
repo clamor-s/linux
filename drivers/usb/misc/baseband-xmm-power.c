@@ -39,6 +39,7 @@ struct baseband_xmm_power_data {
 
 	struct regulator *vbat_supply;
 
+	struct device_node *hsic_node;
 	struct work_struct modem_work;
 
 	int irq_hostwake;
@@ -81,11 +82,13 @@ static void baseband_xmm_power_work(struct work_struct *work)
 {
 	struct baseband_xmm_power_data *priv =
 		container_of(work, struct baseband_xmm_power_data, modem_work);
+	struct platform_device *hsic_line;
 	int timeout_500ms = MODEM_ENUM_TIMEOUT_500MS;
 	int timeout_200ms = 0;
 	bool enum_success = false;
 
-//	dev_err(priv->dev, "%s: init phy\n", __func__);
+	dev_err(priv->dev, "%s: registering controller\n", __func__);
+	hsic_line = of_platform_device_create(priv->hsic_node, NULL, priv->dev);
 
 	/* waiting ap_wake up */
 	while (priv->ap_state == IPC_AP_WAKE_INIT1 && timeout_500ms--) {
@@ -120,7 +123,8 @@ static void baseband_xmm_power_work(struct work_struct *work)
 		priv->ap_state = IPC_AP_WAKE_IRQ_READY;
 
 		/* unregister usb host controller */
-//		dev_err(priv->dev, "%s: suspending phy\n", __func__);
+		dev_err(priv->dev, "%s: deregistering controller\n", __func__);
+		of_platform_device_destroy(&hsic_line->dev, NULL);
 		msleep(500);
 	}
 }
@@ -167,6 +171,8 @@ static int baseband_xmm_power_probe(struct platform_device *pdev)
 {
 	struct baseband_xmm_power_data *priv;
 	struct device *dev = &pdev->dev;
+	struct device_node *np = dev->of_node;
+	struct device_node *child;
 	int ret;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
@@ -175,6 +181,11 @@ static int baseband_xmm_power_probe(struct platform_device *pdev)
 
 	priv->dev = dev;
 	platform_set_drvdata(pdev, priv);
+
+	/* There should be only one child - usb line in HSIC */
+	for_each_child_of_node(np, child) {
+		priv->hsic_node = child;
+	}
 
 	priv->vbat_supply = devm_regulator_get_optional(dev, "vbat");
 	if (IS_ERR(priv->vbat_supply))
