@@ -38,7 +38,7 @@
 		dsi@54300000 {
 			status = "okay";
 
-			avdd-dsi-csi-supply = <&vdd_1v2_ap>;
+			avdd-dsi-csi-supply = <&avdd_dsi_csi>;
 
 			panel@0 {
 				compatible = "lg,ld070wx3-sl01";
@@ -72,68 +72,146 @@
 
 			ti,system-power-controller;
 
+			palmas_extcon: extcon {
+				compatible = "ti,palmas-usb-vid";
+				ti,enable-vbus-detection;
+				ti,enable-id-detection;
+			};
+
+			palmas_clk32kg@0 {
+				compatible = "ti,palmas-clk32kg";
+				#clock-cells = <0>;
+			};
+
 			palmas_gpio: gpio {
 				compatible = "ti,palmas-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
 
+			pinmux {
+				compatible = "ti,tps65913-pinctrl";
+				ti,palmas-enable-dvfs1;
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&palmas_default>;
+
+				palmas_default: pinmux {
+					pin_powergood {
+						pins = "powergood";
+						function = "powergood";
+					};
+
+					pin_vac {
+						pins = "vac";
+						function = "vac";
+					};
+
+					pin_gpio0 {
+						pins = "gpio0";
+						function = "gpio";
+					};
+
+					pin_gpio1 {
+						pins = "gpio1";
+						function = "gpio";
+					};
+
+					pin_gpio2 {
+						pins = "gpio2";
+						function = "gpio";
+					};
+
+					pin_gpio3 {
+						pins = "gpio3";
+						function = "gpio";
+					};
+
+					pin_gpio4 {
+						pins = "gpio4";
+						function = "gpio";
+					};
+
+					pin_gpio5 {
+						pins = "gpio5";
+						function = "gpio";
+					};
+
+					pin_gpio6 {
+						pins = "gpio6";
+						function = "gpio";
+					};
+
+					pin_gpio7 {
+						pins = "gpio7";
+						function = "gpio";
+					};
+				};
+			};
+
 			pmic {
 				compatible = "ti,tps65913-pmic", "ti,palmas-pmic";
 
+				ldo1-in-supply = <&vddio_ddr>;
+				ldo2-in-supply = <&vddio_ddr>;
+				ldo5-in-supply = <&vcore_emmc>;
+				ldo6-in-supply = <&vcore_emmc>;
+				ldo7-in-supply = <&vcore_emmc>;
+				ldo9-in-supply = <&vcore_emmc>;
 				ldoln-in-supply = <&vdd_smps10_out2>;
 
 				regulators {
-					smps123 {
-						regulator-name = "vd-cpu";
-						regulator-min-microvolt = <1000000>;
-						regulator-max-microvolt = <1000000>;
+					vdd_cpu: smps123 {
+						regulator-name = "vdd_cpu";
+						regulator-min-microvolt = <900000>;
+						regulator-max-microvolt = <1350000>;
 						regulator-always-on;
+						regulator-boot-on;
+						ti,roof-floor = <1>;
+						ti,mode-sleep = <3>;
+					};
+
+					vdd_core: smps45 {
+						regulator-name = "vdd_core";
+						regulator-min-microvolt = <900000>;
+						regulator-max-microvolt = <1400000>;
+						regulator-always-on;
+						regulator-boot-on;
+						ti,roof-floor = <3>;
+					};
+
+					avdd_lcd: smps6 {
+						regulator-name = "vdd_lcd_hv";
+						regulator-min-microvolt = <3160000>;
+						regulator-max-microvolt = <3160000>;
 						regulator-boot-on;
 					};
 
-					smps45 {
-						regulator-name = "vd-soc";
-						regulator-min-microvolt = <1100000>;
-						regulator-max-microvolt = <1100000>;
-						regulator-always-on;
-						regulator-boot-on;
-					};
-
-					smps6 {
-						regulator-name = "va-lcd-hv";
-						regulator-min-microvolt = <3000000>;
-						regulator-max-microvolt = <3000000>;
-						regulator-always-on;
-						regulator-boot-on;
-					};
-
-					smps7 {
-						regulator-name = "vd-ddr";
+					vddio_ddr: smps7 {
+						regulator-name = "vddio_ddr";
 						regulator-min-microvolt = <1350000>;
 						regulator-max-microvolt = <1350000>;
 						regulator-always-on;
 						regulator-boot-on;
 					};
 
-					vdd_1v8: smps8 {
-						regulator-name = "vs-pmu-1v8";
+					vdd_1v8_vio: smps8 {
+						regulator-name = "vdd_1v8_gen";
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-always-on;
 						regulator-boot-on;
 					};
 
-					vdd_2v9_sys: smps9 {
-						regulator-name = "vs-sys-2v9";
+					vcore_emmc: smps9 {
+						regulator-name = "vdd_sdmmc";
 						regulator-min-microvolt = <2900000>;
 						regulator-max-microvolt = <2900000>;
-						regulator-always-on;
 						regulator-boot-on;
 					};
 
-					vdd_smps10_out1: smps10_out1 {
-						regulator-name = "vd-smps10-out1";
+					smps10_out1 {
+						regulator-name = "vd_smps10_out1";
 						regulator-min-microvolt = <5000000>;
 						regulator-max-microvolt = <5000000>;
 						regulator-always-on;
@@ -141,7 +219,7 @@
 					};
 
 					vdd_smps10_out2: smps10_out2 {
-						regulator-name = "vd-smps10-out2";
+						regulator-name = "vd_smps10_out2";
 						regulator-min-microvolt = <5000000>;
 						regulator-max-microvolt = <5000000>;
 						regulator-always-on;
@@ -149,82 +227,78 @@
 					};
 
 					ldo1 {
-						regulator-name = "va-pllx";
+						regulator-name = "avdd_csi_dsi_pll";
 						regulator-min-microvolt = <1050000>;
 						regulator-max-microvolt = <1050000>;
 						regulator-always-on;
 						regulator-boot-on;
+						ti,roof-floor = <3>;
 					};
 
-					vdd_1v2_ap: ldo2 {
-						regulator-name = "va-ap-1v2";
+					avdd_dsi_csi: ldo2 {
+						regulator-name = "avdd_dsi_csi";
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <1200000>;
-						regulator-always-on;
 						regulator-boot-on;
 					};
 
 					ldo3 {
-						regulator-name = "vd-fuse";
+						regulator-name = "vpp_fuse";
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
-						regulator-always-on;
-						regulator-boot-on;
 					};
 
 					ldo4 {
-						regulator-name = "vd-ts-hv";
-						regulator-min-microvolt = <3200000>;
-						regulator-max-microvolt = <3200000>;
-						regulator-always-on;
-						regulator-boot-on;
+						regulator-name = "avdd_ts";
+						regulator-min-microvolt = <3000000>;
+						regulator-max-microvolt = <3300000>;
 					};
 
 					ldo5 {
-						regulator-name = "va-cam2-hv";
-						regulator-min-microvolt = <2700000>;
-						regulator-max-microvolt = <2700000>;
+						regulator-name = "vdd_2v8_vcm";
+						regulator-min-microvolt = <2800000>;
+						regulator-max-microvolt = <2800000>;
 					};
 
 					ldo6 {
-						regulator-name = "va-sns-hv";
+						regulator-name = "vdd_dev";
 						regulator-min-microvolt = <2850000>;
 						regulator-max-microvolt = <2850000>;
 					};
 
 					ldo7 {
-						regulator-name = "va-cam1-hv";
+						regulator-name = "avdd_cam1";
 						regulator-min-microvolt = <2700000>;
 						regulator-max-microvolt = <2700000>;
 					};
 
 					ldo8 {
-						regulator-name = "va-ap-rtc";
-						regulator-min-microvolt = <1100000>;
-						regulator-max-microvolt = <1100000>;
-						ti,enable-ldo8-tracking;
+						regulator-name = "vdd_rtc";
+						regulator-min-microvolt = <950000>;
+						regulator-max-microvolt = <950000>;
 						regulator-always-on;
 						regulator-boot-on;
+						ti,enable-ldo8-tracking;
 					};
 
-					ldo9 {
-						regulator-name = "vi-sdcard";
-						regulator-min-microvolt = <2900000>;
+					vddio_usd: ldo9 {
+						regulator-name = "vddio_sdmmc";
+						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <2900000>;
 					};
 
-					ldousb {
-						regulator-name = "avdd-usb";
+					avdd_hdmi: ldoln {
+						regulator-name = "avdd_hdmi";
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3300000>;
-						regulator-always-on;
 						regulator-boot-on;
 					};
 
-					ldoln {
-						regulator-name = "va-hdmi";
+					avdd_usb: ldousb {
+						regulator-name = "avdd_usb";
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3300000>;
+						regulator-boot-on;
 					};
 				};
 			};
@@ -232,7 +306,7 @@
 			rtc {
 				compatible = "ti,palmas-rtc";
 				interrupt-parent = <&palmas>;
-				interrupts = <8 0>;
+				interrupts = <8 IRQ_TYPE_NONE>;
 			};
 
 		};
@@ -331,7 +405,7 @@
 		regulator-max-microvolt = <1800000>;
 		gpio = <&palmas_gpio 4 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
-		vin-supply = <&vdd_1v8>;
+		vin-supply = <&vdd_1v8_vio>;
 		regulator-boot-on;
 	};
 };
