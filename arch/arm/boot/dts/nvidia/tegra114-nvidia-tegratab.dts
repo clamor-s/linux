@@ -9,16 +9,25 @@
 	compatible = "nvidia,tegratab", "nvidia,tegra114";
 	chassis-type = "tablet";
 
+	aliases {
+		mmc0 = &sdmmc4; /* eMMC */
+		mmc1 = &sdmmc3; /* uSD slot */
+
+		rtc0 = &palmas;
+		rtc1 = "/rtc@7000e000";
+
+		display0 = &dsia;
+		display1 = &hdmi;
+
+		serial0 = &uartd; /* Console */
+	};
+
 	chosen {
 		/* TN7's bootloader's arguments need to be overridden */
 		bootargs = "console=ttyS0,115200n8 console=tty1 gpt fbcon=rotate:2";
 		/* TN7's bootloader will place initrd at this address */
 		linux,initrd-start = <0x82000000>;
 		linux,initrd-end = <0x82800000>;
-	};
-
-	aliases {
-		serial0 = &uartd;
 	};
 
 	firmware {
