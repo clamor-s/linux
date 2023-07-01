@@ -366,19 +366,20 @@
 		vqmmc-supply = <&vdd_1v8_vio>;
 	};
 
+	/* Micro USB */
 	usb@7d000000 {
+		compatible = "nvidia,tegra114-udc";
 		status = "okay";
+		dr_mode = "peripheral";
 	};
 
 	usb-phy@7d000000 {
 		status = "okay";
+		dr_mode = "peripheral";
 		nvidia,xcvr-setup = <7>;
 		nvidia,xcvr-lsfslew = <2>;
 		nvidia,xcvr-lsrslew = <2>;
-		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
-		/* Should be changed to "otg" once we have vbus_supply */
-		/* As of now, USB devices need to be powered externally */
-		dr_mode = "host";
+		vbus-supply = <&avdd_usb>;
 	};
 
 	backlight: backlight {
