@@ -44,7 +44,7 @@
 				compatible = "lg,ld070wx3-sl01";
 				reg = <0>;
 
-				power-supply = <&vdd_lcd>;
+				power-supply = <&dvdd_lcd>;
 				backlight = <&backlight>;
 			};
 		};
@@ -361,7 +361,7 @@
 		brightness-levels = <0 4 8 16 32 64 128 255>;
 		default-brightness-level = <6>;
 
-		power-supply = <&lcd_bl_en>;
+		power-supply = <&vdd_3v7_bl>;
 	};
 
 	clk32k_in: clock-32k {
@@ -393,35 +393,54 @@
 		};
 	};
 
-	/* FIXME: output of BQ24192 */
-	vs_sys: regulator-vs {
+	vdd_5v0_sys: regulator-5v0-sys {
 		compatible = "regulator-fixed";
-		regulator-name = "VS_SYS";
-		regulator-min-microvolt = <4200000>;
-		regulator-max-microvolt = <4200000>;
+		regulator-name = "vdd_5v0_sys";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
 		regulator-always-on;
 		regulator-boot-on;
 	};
 
-	lcd_bl_en: regulator-lcden {
+	vdd_3v3_sys: regulator-3v3-sys {
 		compatible = "regulator-fixed";
-		regulator-name = "VDD_LCD_BL";
-		regulator-min-microvolt = <16500000>;
-		regulator-max-microvolt = <16500000>;
-		gpio = <&gpio TEGRA_GPIO(H, 2) GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		vin-supply = <&vs_sys>;
+		regulator-name = "vdd_3v3_sys";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
 		regulator-boot-on;
 	};
 
-	vdd_lcd: regulator-lcd {
+	vdd_3v7_bl: regulator-bl-en {
 		compatible = "regulator-fixed";
-		regulator-name = "VD_LCD_1V8";
+		regulator-name = "vdd_3v7_bl";
+		regulator-min-microvolt = <3700000>;
+		regulator-max-microvolt = <3700000>;
+		regulator-boot-on;
+		gpio = <&gpio TEGRA_GPIO(H, 2) GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		vin-supply = <&vdd_5v0_sys>;
+	};
+
+	dvdd_lcd: regulator-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "dvdd_1v8_lcd";
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
 		gpio = <&palmas_gpio 4 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		vin-supply = <&vdd_1v8_vio>;
+	};
+
+	vdd_2v9_usd: regulator-vdd-usd {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_sd_slot";
+		regulator-min-microvolt = <2900000>;
+		regulator-max-microvolt = <2900000>;
 		regulator-boot-on;
+		gpio = <&gpio TEGRA_GPIO(K, 1) GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		vin-supply = <&vcore_emmc>;
 	};
 };
