@@ -313,7 +313,23 @@
 	};
 
 	pmc@7000e400 {
+		status = "okay";
 		nvidia,invert-interrupt;
+		nvidia,suspend-mode = <2>;
+		nvidia,cpu-pwr-good-time = <300>;
+		nvidia,cpu-pwr-off-time = <300>;
+		nvidia,core-pwr-good-time = <641 3845>;
+		nvidia,core-pwr-off-time = <2000>;
+		nvidia,core-power-req-active-high;
+		nvidia,sys-clock-req-active-high;
+
+		/* Clear DEV_ON bit in DEV_CTRL register of TPS65913 PMIC */
+		i2c-thermtrip {
+			nvidia,i2c-controller-id = <4>;
+			nvidia,bus-addr = <0x58>;
+			nvidia,reg-addr = <0xA0>;
+			nvidia,reg-data = <0x00>;
+		};
 	};
 
 	/* eMMC */
