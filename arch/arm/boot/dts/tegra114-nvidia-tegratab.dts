@@ -332,11 +332,30 @@
 		};
 	};
 
+	/* MicroSD */
+	sdmmc3: mmc@78000400 {
+		status = "okay";
+
+		bus-width = <4>;
+		cd-gpios = <&gpio TEGRA_GPIO(V, 2) GPIO_ACTIVE_LOW>;
+
+		nvidia,default-tap = <0x3>;
+		nvidia,default-trim = <0x3>;
+
+		vmmc-supply = <&vdd_2v9_usd>;
+		vqmmc-supply = <&vddio_usd>;
+	};
+
 	/* eMMC */
-	mmc@78000600 {
+	sdmmc4: mmc@78000600 {
 		status = "okay";
 		bus-width = <8>;
+
 		non-removable;
+		mmc-ddr-1_8v;
+
+		vmmc-supply = <&vcore_emmc>;
+		vqmmc-supply = <&vdd_1v8_vio>;
 	};
 
 	usb@7d000000 {
