@@ -30,8 +30,31 @@
 	};
 
 	memory@80000000 {
-		/* memory >= 0x37e00000 is reserved for firmware usage */
-		reg = <0x80000000 0x37e00000>;
+		reg = <0x80000000 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		linux,cma@80000000 {
+			compatible = "shared-dma-pool";
+			alloc-ranges = <0x80000000 0x30000000>;
+			size = <0x10000000>;		/* 256MiB */
+			linux,cma-default;
+			reusable;
+		};
+
+		bootloader-firmware@b7e00000 {
+			reg = <0xb7e00000 0x8000000>;   /* 128MB */
+			no-map;
+		};
+
+		trustzone@bfe00000 {
+			reg = <0xbfe00000 0x200000>;	/* 2MB */
+			no-map;
+		};
 	};
 
 	host1x@50000000 {
